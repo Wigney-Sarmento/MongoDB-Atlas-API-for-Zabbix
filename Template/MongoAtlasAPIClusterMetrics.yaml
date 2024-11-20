@@ -1,0 +1,185 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 7df96b18c230490a9a0a9e2307226338
+      name: Templates
+  host_groups:
+    - uuid: 748ad4d098d447d492bb935c907f652f
+      name: Databases
+  templates:
+    - uuid: b259e96c42a44770857a8baeab70bc40
+      template: 'Mongo Atlas API Cluster Metrics'
+      name: 'Mongo Atlas API Cluster Metrics'
+      description: 'Developed by https://www.linkedin.com/in/wigneysarmento'
+      groups:
+        - name: Templates
+      items:
+        - uuid: 5cae306d46664a19856ced15179c5890
+          name: 'Hardware Metrics Cluster'
+          type: HTTP_AGENT
+          key: Hardware.Metrics.Cluster
+          history: 90d
+          value_type: TEXT
+          trends: '0'
+          authtype: DIGEST
+          username: '{$USER_KEY}'
+          password: '{$PASS_KEY}'
+          url: 'https://cloud.mongodb.com/api/atlas/v1.0/groups/{$KEY_CLUSTER}/clusters'
+        - uuid: 7c58a4c570fe40a380df35fa5be41afe
+          name: 'Hardware Metrics Nodes'
+          type: HTTP_AGENT
+          key: Hardware.Metrics.Nodes
+          history: 90d
+          value_type: TEXT
+          trends: '0'
+          authtype: DIGEST
+          username: '{$USER_KEY}'
+          password: '{$PASS_KEY}'
+          url: 'https://cloud.mongodb.com/api/atlas/v1.0/groups/{$KEY_CLUSTER}/processes'
+      discovery_rules:
+        - uuid: 982e5a8c3b9e44648a2781af8341d7e6
+          name: 'Hardware Metrics Cluster'
+          type: DEPENDENT
+          key: Hardware.Metrics.Cluster.Descovery
+          delay: '0'
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: ed080346b7654b559a2365f8050728a3
+              name: 'Cluster - {#CLUSTER_NAME} - autoScaling - compute'
+              type: DEPENDENT
+              key: 'cluster.autoscaling.computer.[{#CLUSTER_NAME}]'
+              delay: '0'
+              value_type: TEXT
+              trends: '0'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.results[?(@.name == ''{#CLUSTER_NAME}'')]..autoScaling.compute.enabled.first()'
+              master_item:
+                key: Hardware.Metrics.Cluster
+              trigger_prototypes:
+                - uuid: 5173dc757ce741008b546fb9c82b6898
+                  expression: 'last(/Mongo Atlas API Cluster Metrics/cluster.autoscaling.computer.[{#CLUSTER_NAME}],#2) <> last(/Mongo Atlas API Cluster Metrics/cluster.autoscaling.computer.[{#CLUSTER_NAME}])'
+                  name: 'MongoDB Cluster - Autoscaling Activity Alert: Status Changed {ITEM.LASTVALUE}'
+                  priority: WARNING
+            - uuid: 4cd0ab326fb840b0814e8b5b7b4f808d
+              name: 'Cluster - {#CLUSTER_NAME} - autoScaling - DiskGBEnabled'
+              type: DEPENDENT
+              key: 'cluster.autoscaling.diskGBEnabled.[{#CLUSTER_NAME}]'
+              delay: '0'
+              value_type: TEXT
+              trends: '0'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.results[?(@.name == ''{#CLUSTER_NAME}'')]..autoScaling.diskGBEnabled.first()'
+              master_item:
+                key: Hardware.Metrics.Cluster
+              trigger_prototypes:
+                - uuid: 2386edfaf4064f02b3d34816b58a2994
+                  expression: 'last(/Mongo Atlas API Cluster Metrics/cluster.autoscaling.diskGBEnabled.[{#CLUSTER_NAME}],#2) <> last(/Mongo Atlas API Cluster Metrics/cluster.autoscaling.diskGBEnabled.[{#CLUSTER_NAME}])'
+                  name: 'MongoDB Cluster - DiskGBEnabled Scale Alert: Status Changed {ITEM.LASTVALUE}'
+                  priority: WARNING
+            - uuid: 49e6deeab6bc47928c9775720389a8d2
+              name: 'Cluster - {#CLUSTER_NAME} - scaleDownEnabled - compute'
+              type: DEPENDENT
+              key: 'cluster.scaleDownEnabled.computer.[{#CLUSTER_NAME}]'
+              delay: '0'
+              value_type: TEXT
+              trends: '0'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.results[?(@.name == ''{#CLUSTER_NAME}'')]..autoScaling.compute.scaleDownEnabled.first()'
+              master_item:
+                key: Hardware.Metrics.Cluster
+              trigger_prototypes:
+                - uuid: 8d7ed91f3f01492986853880bcee8cfd
+                  expression: 'last(/Mongo Atlas API Cluster Metrics/cluster.scaleDownEnabled.computer.[{#CLUSTER_NAME}],#2) <> last(/Mongo Atlas API Cluster Metrics/cluster.scaleDownEnabled.computer.[{#CLUSTER_NAME}])'
+                  name: 'MongoDB Cluster - ScaleDownEnabled Activity Alert: Status Changed {ITEM.LASTVALUE}'
+                  priority: WARNING
+            - uuid: 455fb9a3b74f4daaaf34a1088ea94498
+              name: 'Cluster - {#CLUSTER_NAME} - instanceSizeName'
+              type: DEPENDENT
+              key: 'instanceSizeName.[{#CLUSTER_NAME}]'
+              delay: '0'
+              value_type: TEXT
+              trends: '0'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.results[?(@.name == ''{#CLUSTER_NAME}'')]..instanceSizeName.first()'
+              master_item:
+                key: Hardware.Metrics.Cluster
+              trigger_prototypes:
+                - uuid: e070bc58fd1149d2b45c632867292faa
+                  expression: 'last(/Mongo Atlas API Cluster Metrics/instanceSizeName.[{#CLUSTER_NAME}],#2) <> last(/Mongo Atlas API Cluster Metrics/instanceSizeName.[{#CLUSTER_NAME}])'
+                  name: 'MongoDB Cluster - Tier Change Alert {ITEM.LASTVALUE}'
+                  priority: AVERAGE
+          master_item:
+            key: Hardware.Metrics.Cluster
+          lld_macro_paths:
+            - lld_macro: '{#CLUSTER_NAME}'
+              path: $.name
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.results
+        - uuid: 518a3d3c3330488abeee32eed1b8588e
+          name: 'Hardware Metrics Nodes'
+          type: DEPENDENT
+          key: Hardware.Metrics.Nodes.Descovery
+          delay: '0'
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          host_prototypes:
+            - uuid: 15c10254e5134acb920b46d6ba2b1062
+              host: '{#NODE_HOSTNAME}'
+              name: '{#NODE_HOSTNAME}'
+              group_links:
+                - group:
+                    name: Databases
+              group_prototypes:
+                - name: '{#NODE_ID}'
+              templates:
+                - name: 'MongoDB Atlas API Node Metrics'
+              macros:
+                - macro: '{$KEY_CLUSTER}'
+                  type: SECRET_TEXT
+                - macro: '{$NODE_ID}'
+                  type: SECRET_TEXT
+                - macro: '{$PASS_KEY}'
+                  type: SECRET_TEXT
+                - macro: '{$USER_KEY}'
+                  type: SECRET_TEXT
+              tags:
+                - tag: replicaSetName
+                  value: '{#REPLICASETNAME}'
+              custom_interfaces: 'YES'
+              interfaces:
+                - {  }
+          master_item:
+            key: Hardware.Metrics.Nodes
+          lld_macro_paths:
+            - lld_macro: '{#NODE_ALIAS}'
+              path: $.userAlias
+            - lld_macro: '{#NODE_HOSTNAME}'
+              path: $.hostname
+            - lld_macro: '{#NODE_ID}'
+              path: $.id
+            - lld_macro: '{#REPLICASETNAME}'
+              path: $.replicaSetName
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.results
+      macros:
+        - macro: '{$KEY_CLUSTER}'
+          type: SECRET_TEXT
+        - macro: '{$PASS_KEY}'
+          type: SECRET_TEXT
+          description: 'Password the API key obtained from MongoDB Atlas.'
+        - macro: '{$USER_KEY}'
+          type: SECRET_TEXT
+          description: 'User the API key obtained from MongoDB Atlas.'

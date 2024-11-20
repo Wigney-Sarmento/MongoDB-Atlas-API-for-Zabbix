@@ -1,0 +1,50 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 7df96b18c230490a9a0a9e2307226338
+      name: Templates
+  templates:
+    - uuid: a24e6a116712489e877fdec1eee422a5
+      template: 'MongoDB Atlas API Node Metrics'
+      name: 'MongoDB Atlas API Node Metrics'
+      groups:
+        - name: Templates
+      items:
+        - uuid: 4127189b57894cb4a82cb3fbcad427a0
+          name: 'Get Node {#NODE_ID}'
+          type: HTTP_AGENT
+          key: GET.NODE
+          value_type: LOG
+          trends: '0'
+          authtype: DIGEST
+          username: '{$USER_KEY}'
+          password: '{$PASS_KEY}'
+          url: 'https://cloud.mongodb.com/api/atlas/v1.0/groups/{$KEY_CLUSTER}/processes/{$NODE_ID}/measurements?granularity=PT1M&period=PT2H'
+      discovery_rules:
+        - uuid: e8e65deede23499ea6011e36e4cf5963
+          name: METRICS
+          type: DEPENDENT
+          key: METRICS
+          delay: '0'
+          item_prototypes:
+            - uuid: 47a2cffe2e5f480fb0f07f95d527d5a3
+              name: 'Name {#NAME}'
+              type: DEPENDENT
+              key: 'Name.[{#NAME}]'
+              delay: '0'
+              value_type: FLOAT
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.measurements[?(@.name == ''{#NAME}'')].dataPoints[-1].value.first()'
+              master_item:
+                key: GET.NODE
+          master_item:
+            key: GET.NODE
+          lld_macro_paths:
+            - lld_macro: '{#NAME}'
+              path: $.name
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.measurements
